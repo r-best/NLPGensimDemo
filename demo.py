@@ -3,10 +3,10 @@ import multiprocessing
 from gensim import corpora, models
 
 # Training file to be used for initial training
-TRAINING_FILE = './training/6-2 The Big Salad'
+TARGET_FILE = './training/6-2 The Big Salad'
 
 # Training file to be used for adaptation
-ADAPT_FILE = './training/5-2 The Puffy Shirt'
+SOURCE_FILE = './training/5-2 The Puffy Shirt'
 
 STOPWORDS_FILE = './stopwords.txt'
 
@@ -48,7 +48,7 @@ def preprocess(text, stopwords):
 
 def train_model(corpus):
     # Instantiate empty model
-    model = models.Word2Vec(min_count=1, iter=1, size=300)
+    model = models.Word2Vec(min_count=1, iter=100, size=50, window=4)
 
     # Train model on data
     model.build_vocab(corpus)
@@ -77,13 +77,13 @@ def main():
     STOPWORDS = [x.replace("\n", "") for x in readFile(STOPWORDS_FILE)]
 
     # Read in training files and format them for use in the model
-    target_corpus = readFile(TRAINING_FILE)
+    target_corpus = readFile(TARGET_FILE)
     target_corpus.append("puffy shirt") # Have to add so these words are in the vocabulary for the example
     target_corpus = [preprocess(x, STOPWORDS) for x in target_corpus]
     # print(target_corpus)
 
     # Read in data that will be used to adapt the model
-    source_corpus = readFile(ADAPT_FILE)
+    source_corpus = readFile(SOURCE_FILE)
     source_corpus.append("salad")
     source_corpus = [preprocess(x, STOPWORDS) for x in source_corpus]
     # print(adaptation_corpus)
@@ -103,7 +103,6 @@ def main():
     print("Weighted-Concatenate Method:")
     source_target = train_model(target_corpus+source_corpus+source_corpus)
     printModelStatistics(source_target)
-    
 
     # 4: Retrain source method
     print("Retrain Source Method:")

@@ -69,7 +69,6 @@ def main():
     model.train(initial_corpus, total_examples=model.corpus_count, epochs=model.iter)
     print("Initial Model:", model, '\n')
     print("Initial similarity between 'big' and 'salad':", model.wv.n_similarity(['big'], ['salad']))
-    print("Initial similarity between 'puffy' and 'shirt':", model.wv.n_similarity(['puffy'], ['shirt']))
     print("Adapted similar words to 'big':", sorted([x[0] for x in model.wv.most_similar('big')]))
     print("Adapted similar words to 'puffy':", sorted([x[0] for x in model.wv.most_similar('puffy')]))
 
@@ -80,7 +79,6 @@ def main():
     model.train(adaptation_corpus, total_examples=model.corpus_count, epochs=model.iter)
     # print("Adapted Model:", model, '\n')
     print("Adapted similarity between 'big' and 'salad':", model.wv.n_similarity(['big'], ['salad']))
-    print("Adapted similarity between 'puffy' and 'shirt':", model.wv.n_similarity(['puffy'], ['shirt']))
     print("Adapted similar words to 'big':", sorted([x[0] for x in model.wv.most_similar('big')]))
     print("Adapted similar words to 'puffy':", sorted([x[0] for x in model.wv.most_similar('puffy')]))
 

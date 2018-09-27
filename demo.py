@@ -37,7 +37,8 @@ def preprocess(text, stopwords):
     text = text.replace(']', ' ] ')
     text = text.replace('!', ' !')
     text = text.replace('?', ' ?')
-    text = text.replace('.', ' .')
+    text = text.replace('.', ' . ')
+    text = text.replace(',', ' , ')
     text = text.lower()
 
     tokens = text.split()
@@ -66,7 +67,8 @@ def retrain_model(model, corpus):
 def printModelStatistics(model):
     print("\tJerry-George similarity:", model.wv.n_similarity(['jerry'], ['george']))
     print("\tBig-Salad similarity", model.wv.n_similarity(['big'], ['salad']))
-    print("Words most similar to 'Elaine':", sorted([x[0] for x in model.wv.most_similar('elaine')]))
+    print("\tWords most similar to 'Elaine':", sorted([x[0] for x in model.wv.most_similar('elaine')]))
+    print()
 
 ##
 # Main method
@@ -88,26 +90,26 @@ def main():
 
 
     # 1: Source-only method
+    print("Source Only Method:")
     source_only = train_model(source_corpus)
-    print("Source Only Method")
     printModelStatistics(source_only)
 
     # 2: Source+target method
+    print("Source+Target Method:")
     source_target = train_model(target_corpus+source_corpus)
-    print("Source+Target Method")
     printModelStatistics(source_target)
 
     # 3: Weighted concatenate method
+    # print("Weighted-Concatenate Method:")
     
 
     # 4: Retrain source method
+    print("Retrain Source Method:")
     retrain_source = train_model(target_corpus)
     retrain_source = retrain_model(retrain_source, source_corpus)
-    print("Retrain Source Method")
     printModelStatistics(retrain_source)
 
 
 if __name__ == '__main__':
     print()
     main()
-    print()

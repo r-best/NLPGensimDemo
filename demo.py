@@ -28,6 +28,8 @@ def readFile(file):
 ##
 def preprocess(text, stopwords):
     text = text.replace('\n', ' \n ')
+    text = text.replace("'", " ' ")
+    text = text.replace('"', ' " ')
     text = text.replace('(', ' ( ')
     text = text.replace(')', ' ) ')
     text = text.replace(':', ' : ')
@@ -43,6 +45,28 @@ def preprocess(text, stopwords):
     
     return tokens
 
+def train_model(corpus):
+    # Instantiate empty model
+    model = models.Word2Vec(min_count=1, iter=1, size=300)
+
+    # Train model on data
+    model.build_vocab(corpus)
+    model.train(corpus, total_examples=model.corpus_count, epochs=model.iter)
+
+    return model
+
+def retrain_model(model, corpus):
+    # Train model on new data
+    model.build_vocab(corpus, update=True)
+    model.train(corpus, total_examples=model.corpus_count, epochs=model.iter)
+
+    return model
+
+
+def printModelStatistics(model):
+    print("\tJerry-George similarity:", model.wv.n_similarity(['jerry'], ['george']))
+    print("\tBig-Salad similarity", model.wv.n_similarity(['big'], ['salad']))
+    print("Words most similar to 'Elaine':", sorted([x[0] for x in model.wv.most_similar('elaine')]))
 
 ##
 # Main method
@@ -51,38 +75,39 @@ def main():
     STOPWORDS = [x.replace("\n", "") for x in readFile(STOPWORDS_FILE)]
 
     # Read in training files and format them for use in the model
-    initial_corpus = readFile(TRAINING_FILE)
-    initial_corpus.append("puffy shirt") # Have to add so these words are in the vocabulary for the example
-    initial_corpus = [preprocess(x, STOPWORDS) for x in initial_corpus]
-    # print(initial_corpus)
+    target_corpus = readFile(TRAINING_FILE)
+    target_corpus.append("puffy shirt") # Have to add so these words are in the vocabulary for the example
+    target_corpus = [preprocess(x, STOPWORDS) for x in target_corpus]
+    # print(target_corpus)
 
     # Read in data that will be used to adapt the model
-    adaptation_corpus = readFile(ADAPT_FILE)
-    adaptation_corpus = [preprocess(x, STOPWORDS) for x in adaptation_corpus]
+    source_corpus = readFile(ADAPT_FILE)
+    source_corpus.append("salad")
+    source_corpus = [preprocess(x, STOPWORDS) for x in source_corpus]
     # print(adaptation_corpus)
 
-    # Instantiate empty model
-    model = models.Word2Vec(min_count=1, iter=1, size=300)
 
-    # Train model on initial data
-    model.build_vocab(initial_corpus)
-    model.train(initial_corpus, total_examples=model.corpus_count, epochs=model.iter)
-    print("Initial Model:", model, '\n')
-    print("Initial similarity between 'big' and 'salad':", model.wv.n_similarity(['big'], ['salad']))
-    print("Adapted similar words to 'big':", sorted([x[0] for x in model.wv.most_similar('big')]))
-    print("Adapted similar words to 'puffy':", sorted([x[0] for x in model.wv.most_similar('puffy')]))
+    # 1: Source-only method
+    source_only = train_model(source_corpus)
+    print("Source Only Method")
+    printModelStatistics(source_only)
 
-    print()
+    # 2: Source+target method
+    source_target = train_model(target_corpus+source_corpus)
+    print("Source+Target Method")
+    printModelStatistics(source_target)
 
-    # Train model with some new data
-    model.build_vocab(adaptation_corpus, update=True)
-    model.train(adaptation_corpus, total_examples=model.corpus_count, epochs=model.iter)
-    # print("Adapted Model:", model, '\n')
-    print("Adapted similarity between 'big' and 'salad':", model.wv.n_similarity(['big'], ['salad']))
-    print("Adapted similar words to 'big':", sorted([x[0] for x in model.wv.most_similar('big')]))
-    print("Adapted similar words to 'puffy':", sorted([x[0] for x in model.wv.most_similar('puffy')]))
+    # 3: Weighted concatenate method
+    
+
+    # 4: Retrain source method
+    retrain_source = train_model(target_corpus)
+    retrain_source = retrain_model(retrain_source, source_corpus)
+    print("Retrain Source Method")
+    printModelStatistics(retrain_source)
 
 
 if __name__ == '__main__':
     print()
     main()
+    print()

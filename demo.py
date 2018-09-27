@@ -2,8 +2,13 @@ import os
 import multiprocessing
 from gensim import corpora, models
 
-TRAINING_DIR = './training_small/initial_corpus'
-ADAPT_DIR = './training_small/adapt'
+# Training file to be used for initial training
+TRAINING_FILE = './training/6-2 The Big Salad'
+
+# Training file to be used for adaptation
+ADAPT_FILE = './training/5-2 The Puffy Shirt'
+
+STOPWORDS_FILE = './stopwords.txt'
 
 ## 
 # Takes in a filename and returns its contents
@@ -17,35 +22,67 @@ def readFile(file):
 
 
 ##
+# Takes in a string, applies a set of 
+# preprocessing rules to it, and splits
+# it into a list of its tokens
+##
+def preprocess(text, stopwords):
+    text = text.replace('\n', ' \n ')
+    text = text.replace('(', ' ( ')
+    text = text.replace(')', ' ) ')
+    text = text.replace(':', ' : ')
+    text = text.replace('[', ' [ ')
+    text = text.replace(']', ' ] ')
+    text = text.replace('!', ' !')
+    text = text.replace('?', ' ?')
+    text = text.replace('.', ' .')
+    text = text.lower()
+
+    tokens = text.split()
+    tokens = [x for x in tokens if x not in stopwords]
+    
+    return tokens
+
+
+##
 # Main method
 ##
 def main():
+    STOPWORDS = [x.replace("\n", "") for x in readFile(STOPWORDS_FILE)]
+
     # Read in training files and format them for use in the model
-    initial_corpus = readFile(TRAINING_DIR)
-    initial_corpus = [x.split() for x in initial_corpus]
+    initial_corpus = readFile(TRAINING_FILE)
+    initial_corpus.append("puffy shirt") # Have to add so these words are in the vocabulary for the example
+    initial_corpus = [preprocess(x, STOPWORDS) for x in initial_corpus]
     # print(initial_corpus)
 
-    # Instantiate model
-    model = models.Word2Vec(min_count=1, iter=1)
-    model.build_vocab(initial_corpus)
-    model.train(initial_corpus, total_examples=model.corpus_count, epochs=2)
-    # print("Initial Model:", model, '\n')
-    print("Initial similarity between 'word1' and 'word2':", model.wv.n_similarity(['word1'], ['word2']))
-    print("Initial similarity between 'word1' and 'word3':", model.wv.n_similarity(['word1'], ['word3']))
-    print("Initial word most similar to 'word1':", model.wv.most_similar_to_given('word1', ['word2', 'word3']), '\n')
-
     # Read in data that will be used to adapt the model
-    adaptation_corpus = readFile(ADAPT_DIR)
-    adaptation_corpus = [x.split() for x in adaptation_corpus]
+    adaptation_corpus = readFile(ADAPT_FILE)
+    adaptation_corpus = [preprocess(x, STOPWORDS) for x in adaptation_corpus]
     # print(adaptation_corpus)
 
-    # Add new data to model
+    # Instantiate empty model
+    model = models.Word2Vec(min_count=1, iter=1, size=300)
+
+    # Train model on initial data
+    model.build_vocab(initial_corpus)
+    model.train(initial_corpus, total_examples=model.corpus_count, epochs=model.iter)
+    print("Initial Model:", model, '\n')
+    print("Initial similarity between 'big' and 'salad':", model.wv.n_similarity(['big'], ['salad']))
+    print("Initial similarity between 'puffy' and 'shirt':", model.wv.n_similarity(['puffy'], ['shirt']))
+    print("Adapted similar words to 'big':", sorted([x[0] for x in model.wv.most_similar('big')]))
+    print("Adapted similar words to 'puffy':", sorted([x[0] for x in model.wv.most_similar('puffy')]))
+
+    print()
+
+    # Train model with some new data
     model.build_vocab(adaptation_corpus, update=True)
-    model.train(adaptation_corpus, total_examples=model.corpus_count, epochs=3)
+    model.train(adaptation_corpus, total_examples=model.corpus_count, epochs=model.iter)
     # print("Adapted Model:", model, '\n')
-    print("Adapted similarity between 'word1' and 'word2':", model.wv.n_similarity(['word1'], ['word2']))
-    print("Adapted similarity between 'word1' and 'word3':", model.wv.n_similarity(['word1'], ['word3']))
-    print("Adapted word most similar to 'word1':", model.wv.most_similar_to_given('word1', ['word2', 'word3']), '\n')
+    print("Adapted similarity between 'big' and 'salad':", model.wv.n_similarity(['big'], ['salad']))
+    print("Adapted similarity between 'puffy' and 'shirt':", model.wv.n_similarity(['puffy'], ['shirt']))
+    print("Adapted similar words to 'big':", sorted([x[0] for x in model.wv.most_similar('big')]))
+    print("Adapted similar words to 'puffy':", sorted([x[0] for x in model.wv.most_similar('puffy')]))
 
 
 if __name__ == '__main__':

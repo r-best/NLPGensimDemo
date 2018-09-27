@@ -100,7 +100,9 @@ def main():
     printModelStatistics(source_target)
 
     # 3: Weighted concatenate method
-    # print("Weighted-Concatenate Method:")
+    print("Weighted-Concatenate Method:")
+    source_target = train_model(target_corpus+source_corpus+source_corpus)
+    printModelStatistics(source_target)
     
 
     # 4: Retrain source method
